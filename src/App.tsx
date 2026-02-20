@@ -8,8 +8,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import EducationPage from "./pages/EducationPage";
+import EducationCoursePage from "./pages/EducationCoursePage";
 import TrainingPage from "./pages/TrainingPage";
-import TrainingModulePage from "./pages/TrainingModulePage";
+import DictionLabPage from "./pages/DictionLabPage";
+import SpeechCoachPage from "./pages/SpeechCoachPage";
+import InterviewPage from "./pages/InterviewPage";
 import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
@@ -27,8 +30,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/education" element={<EducationPage />} />
+              <Route path="/education/:courseKey" element={<EducationCoursePage />} />
               <Route path="/training" element={<TrainingPage />} />
-              <Route path="/training/:moduleKey" element={<TrainingModulePage />} />
+              <Route path="/training/diction" element={<DictionLabPage />} />
+              <Route path="/training/speech" element={<SpeechCoachPage />} />
+              <Route path="/training/interview" element={<InterviewPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

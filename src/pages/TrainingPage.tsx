@@ -1,13 +1,10 @@
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { AudioWaveform, Video, Bot, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 const trainings = [
   { key: 'diction', icon: AudioWaveform, color: 'bg-fun-teal/10 text-fun-teal' },
@@ -17,21 +14,6 @@ const trainings = [
 
 const TrainingPage = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleStart = async (courseKey: string) => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    await supabase.from('course_progress').upsert(
-      { user_id: user.id, course_key: `train_${courseKey}`, progress_percent: 10, last_accessed: new Date().toISOString() },
-      { onConflict: 'user_id,course_key' }
-    );
-    toast({ title: t('profile.started'), description: t('profile.started_desc') });
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,7 +32,7 @@ const TrainingPage = () => {
           {t('train.title')}
         </motion.h1>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {trainings.map(({ key, icon: Icon, color }, i) => (
             <motion.div
               key={key}
@@ -68,16 +50,11 @@ const TrainingPage = () => {
               <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
                 {t(`train.${key}.desc`)}
               </p>
-              <div className="flex gap-2">
-                <Button className="rounded-full font-bold" onClick={() => handleStart(key)}>
-                  {t('train.start')}
+              <Link to={`/training/${key}`}>
+                <Button className="rounded-full font-bold w-full">
+                  {t('train.open')}
                 </Button>
-                <Link to={`/training/${key}`}>
-                  <Button variant="outline" className="rounded-full font-bold">
-                    {t('train.open')}
-                  </Button>
-                </Link>
-              </div>
+              </Link>
             </motion.div>
           ))}
         </div>

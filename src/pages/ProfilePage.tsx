@@ -22,13 +22,16 @@ interface CourseProgress {
   completed: boolean;
 }
 
-const allCourses = [
-  { key: 'edu_gesticulation', section: 'edu', labelKey: 'edu.gesticulation' },
-  { key: 'edu_speech', section: 'edu', labelKey: 'edu.speech' },
-  { key: 'edu_diction', section: 'edu', labelKey: 'edu.diction' },
-  { key: 'train_diction', section: 'train', labelKey: 'train.diction' },
-  { key: 'train_speech', section: 'train', labelKey: 'train.speech' },
-  { key: 'train_interview', section: 'train', labelKey: 'train.interview' },
+const eduCourses = [
+  { key: 'edu_gesticulation', labelKey: 'edu.gesticulation' },
+  { key: 'edu_speech', labelKey: 'edu.speech' },
+  { key: 'edu_diction', labelKey: 'edu.diction' },
+];
+
+const trainCourses = [
+  { key: 'train_diction', labelKey: 'train.diction' },
+  { key: 'train_speech', labelKey: 'train.speech' },
+  { key: 'train_interview', labelKey: 'train.interview' },
 ];
 
 const ProfilePage = () => {
@@ -43,20 +46,17 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (!user) return;
-
     const fetchData = async () => {
       const [profileRes, progressRes] = await Promise.all([
         supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).single(),
         supabase.from('course_progress').select('course_key, progress_percent, completed').eq('user_id', user.id),
       ]);
-
       if (profileRes.data) {
         setProfile(profileRes.data);
         setNewName(profileRes.data.display_name || '');
       }
       if (progressRes.data) setProgress(progressRes.data);
     };
-
     fetchData();
   }, [user]);
 
@@ -75,13 +75,11 @@ const ProfilePage = () => {
     if (!user || !e.target.files?.[0]) return;
     const file = e.target.files[0];
     const path = `${user.id}/avatar.${file.name.split('.').pop()}`;
-
     const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (uploadError) {
       toast({ title: t('auth.error'), description: uploadError.message, variant: 'destructive' });
       return;
     }
-
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
     await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
     setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
@@ -93,6 +91,27 @@ const ProfilePage = () => {
   };
 
   const getProgressFor = (key: string) => progress.find(p => p.course_key === key);
+
+  const renderProgressSection = (title: string, courses: { key: string; labelKey: string }[], colorClass: string) => (
+    <div className="mb-8">
+      <h3 className="mb-4 font-display text-lg font-bold text-foreground">{title}</h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {courses.map(({ key, labelKey }) => {
+          const cp = getProgressFor(key);
+          const pct = cp?.progress_percent ?? 0;
+          return (
+            <div key={key} className={`rounded-2xl border border-border p-5 ${colorClass}`}>
+              <h4 className="mb-2 font-display text-sm font-bold text-foreground">{t(labelKey)}</h4>
+              <Progress value={pct} className="mb-2 h-3" />
+              <p className="text-xs font-semibold text-muted-foreground">
+                {pct}% {cp?.completed ? '✅' : ''}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,7 +127,7 @@ const ProfilePage = () => {
         </h1>
 
         {/* Profile card */}
-        <div className="mb-10 flex flex-col items-center gap-4 rounded-3xl border border-border bg-card p-8 fun-shadow sm:flex-row sm:items-start sm:gap-8">
+        <div className="mb-10 flex flex-col items-center gap-4 rounded-3xl border border-border bg-card p-6 fun-shadow sm:flex-row sm:items-start sm:gap-8 sm:p-8">
           <label className="group relative cursor-pointer">
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-muted">
               {profile.avatar_url ? (
@@ -125,7 +144,7 @@ const ProfilePage = () => {
 
           <div className="flex-1 text-center sm:text-left">
             {editing ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="max-w-xs rounded-xl" />
                 <Button size="sm" onClick={handleSaveName} className="rounded-full">{t('profile.save')}</Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="rounded-full">{t('profile.cancel')}</Button>
@@ -151,24 +170,8 @@ const ProfilePage = () => {
 
         {/* Progress */}
         <h2 className="mb-6 font-display text-2xl font-bold text-foreground">{t('profile.progress')}</h2>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {allCourses.map(({ key, section, labelKey }) => {
-            const cp = getProgressFor(key);
-            const pct = cp?.progress_percent ?? 0;
-            const colorClass = section === 'edu' ? 'bg-fun-coral/10' : 'bg-fun-teal/10';
-
-            return (
-              <div key={key} className={`rounded-2xl border border-border p-5 ${colorClass}`}>
-                <h3 className="mb-2 font-display text-sm font-bold text-foreground">{t(labelKey)}</h3>
-                <Progress value={pct} className="mb-2 h-3" />
-                <p className="text-xs font-semibold text-muted-foreground">
-                  {pct}% {cp?.completed ? '✅' : ''}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        {renderProgressSection(t('profile.progress_edu'), eduCourses, 'bg-fun-coral/10')}
+        {renderProgressSection(t('profile.progress_train'), trainCourses, 'bg-fun-teal/10')}
       </main>
       <Footer />
     </div>

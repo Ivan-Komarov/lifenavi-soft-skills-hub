@@ -1,13 +1,10 @@
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Hand, Mic, AudioWaveform, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 const courses = [
   { key: 'gesticulation', icon: Hand, color: 'bg-fun-coral/10 text-fun-coral' },
@@ -17,21 +14,7 @@ const courses = [
 
 const EducationPage = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const handleStart = async (courseKey: string) => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    await supabase.from('course_progress').upsert(
-      { user_id: user.id, course_key: `edu_${courseKey}`, progress_percent: 10, last_accessed: new Date().toISOString() },
-      { onConflict: 'user_id,course_key' }
-    );
-    toast({ title: t('profile.started'), description: t('profile.started_desc') });
-  };
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -49,7 +32,7 @@ const EducationPage = () => {
           {t('edu.title')}
         </motion.h1>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map(({ key, icon: Icon, color }, i) => (
             <motion.div
               key={key}
@@ -77,9 +60,11 @@ const EducationPage = () => {
                 <p className="mb-4 text-sm text-muted-foreground">
                   {t(`edu.${key}.desc`)}
                 </p>
-                <Button size="sm" className="w-full rounded-full font-bold" onClick={() => handleStart(key)}>
-                  {t('edu.go')}
-                </Button>
+                <Link to={`/education/${key}`}>
+                  <Button size="sm" className="w-full rounded-full font-bold">
+                    {t('edu.go')}
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           ))}
